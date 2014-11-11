@@ -9,6 +9,9 @@ angular.module('siyfion.sfTypeahead', [])
       },
       link: function (scope, element, attrs, ngModel) {
 
+        // workaround for firefox when select item from suggestion, calls $setViewValue#ngModel twice and break the $modelValue.
+        scope.lastModel = null;
+
         var options = scope.options || {},
             datasets = (angular.isArray(scope.datasets) ? scope.datasets : [scope.datasets]) || []; // normalize to array
 
@@ -90,10 +93,27 @@ angular.module('siyfion.sfTypeahead', [])
         }
 
         function updateScope (object, suggestion, dataset) {
+          scope.lastModel = suggestion;
+
           scope.$apply(function () {
             ngModel.$setViewValue(suggestion);
           });
         }
+
+        element.bind('blur', function(object) {
+          var model = ngModel.$modelValue || scope.lastModel;
+          var model_val = null;
+          if (!!model) {
+            model_val = model.label;
+          }
+
+          var input_val = element.val();
+
+          if (input_val !== model_val) {
+            element.typeahead('val', '');
+            scope.lastModel = null;
+          }
+        });
 
         // Update the value binding when a value is manually selected from the dropdown.
         element.bind('typeahead:selected', function(object, suggestion, dataset) {
@@ -120,6 +140,29 @@ angular.module('siyfion.sfTypeahead', [])
         // Propagate the cursorchanged event
         element.bind('typeahead:cursorchanged', function(event, suggestion, dataset) {
           scope.$emit('typeahead:cursorchanged', event, suggestion, dataset);
+        });
+
+
+        unbindWatch_datasets = scope.$watch('datasets', function (newValue, oldValue) {
+          // if (newValue === oldValue) return;
+          element.typeahead('destroy')
+            .typeahead(scope.options, scope.datasets);
+        }, true);
+
+
+        unbindeOn_destroy = scope.$on('$destroy', function (){
+          element.unbind('blur');
+          element.unbind('typeahead:selected')
+          element.unbind('typeahead:autocompleted')
+          element.unbind('typeahead:opened')
+          element.unbind('typeahead:closed')
+          element.unbind('typeahead:cursorchanged')
+
+          element.typeahead('destroy')
+
+          unbindWatch_datasets();
+
+          unbindeOn_destroy();
         });
       }
     };
