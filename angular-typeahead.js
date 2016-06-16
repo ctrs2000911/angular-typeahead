@@ -113,6 +113,10 @@ angular.module('siyfion.sfTypeahead', [])
             element.typeahead('val', '');
             scope.lastModel = null;
           }
+
+          if (input_val === '' || input_val === null || input_val === void 0) {
+            updateScope(null, null);
+          }
         });
 
         // Update the value binding when a value is manually selected from the dropdown.
@@ -150,7 +154,7 @@ angular.module('siyfion.sfTypeahead', [])
         }, true);
 
 
-        unbindeOn_destroy = scope.$on('$destroy', function (){
+        unbindOn_destroy = scope.$on('$destroy', function (){
           element.unbind('blur');
           element.unbind('typeahead:selected')
           element.unbind('typeahead:autocompleted')
@@ -162,7 +166,7 @@ angular.module('siyfion.sfTypeahead', [])
 
           unbindWatch_datasets();
 
-          unbindeOn_destroy();
+          unbindOn_destroy();
         });
       }
     };
